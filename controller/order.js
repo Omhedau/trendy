@@ -3,15 +3,15 @@ import { OrderItem } from "../models/orderItem.js";
 import { Cart } from "../models/cart.js";
 import { CartItem } from "../models/cartItem.js";
 
-
 const orderController = {
   createOrder: async (req, res) => {
     try {
       // Get user from req.user
       const user = req.user._id;
   
-      // Extract shipping address and payment details from req.body
+      // Destructure shipping address and payment details from req.body
       const { shippingAddress, paymentDetails } = req.body;
+      const { firstName, lastName, country, address, city, state, zipcode, mobile, email } = shippingAddress;
   
       // Find the user's cart
       const cart = await Cart.findOne({ user }).populate({
@@ -30,18 +30,29 @@ const orderController = {
       const orderItemIds = await Promise.all(
         cart.items.map(async (cartItem) => {
           const { product, quantity, size } = cartItem;
-          const price = product.discountedPrice * quantity; // Use discounted price multiplied by quantity
-          const orderItem = new OrderItem({ product, quantity, size, price });
+          const price = product.discountedPrice * quantity; 
+          const name = product.title; 
+          const orderItem = new OrderItem({ product, name, quantity, size, price });
           await orderItem.save();
           return orderItem._id;
         })
       );
   
-      // Create new order using cart's totalPrice, totalDiscount, and totalItems
+      // Create new order with destructured shipping address fields
       const newOrder = new Order({
         user,
         orderItems: orderItemIds,
-        shippingAddress,
+        shippingAddress: {
+          firstName,
+          lastName,
+          country,
+          address,
+          city,
+          state,
+          zipcode,
+          mobile,
+          email
+        },
         paymentDetails,
         totalPrice: cart.totalPrice,
         totalDiscount: cart.totalDiscount,
@@ -69,12 +80,11 @@ const orderController = {
       res.status(500).json({ success: false, message: "Failed to create order" });
     }
   },
-
-
+  
   getUserOrders: async (req, res) => {
     try {
       const userId = req.user.id; // Assuming you have user authentication and the user ID is available in req.user
-      const orders = await Order.find({ user: userId }).populate('orderItems').populate('shippingAddress');// Assuming orders have a 'user' field referencing the user and 'products' field
+      const orders = await Order.find({ user: userId }).populate('orderItems'); // Assuming orders have a 'user' field referencing the user and 'products' field
 
       if (!orders) {
         return res.status(404).json({ error: 'Orders not found' });
