@@ -227,6 +227,9 @@ const productController = {
 
   addReview: async (req, res) => {
     try {
+
+      console.log("reaching up here..");
+
       const id = req.params.id;
       const { rating, comment } = req.body;
       const user = req.user._id;
