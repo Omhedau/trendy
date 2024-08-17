@@ -179,8 +179,14 @@ const productController = {
     try {
       console.log("Product get by id");
       const productId = req.params.id;
-      const product = await Product.findById(productId);
-      //.populate('ratings reviews category');
+      const product = await Product.findById(productId)
+      .populate({
+        path: "reviews",
+        populate: {
+          path: "user",
+          model: "User",
+        },
+      });
 
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
@@ -257,7 +263,14 @@ const productController = {
       await product.save();
   
       // Populate the reviews
-      const updatedProduct = await Product.findById(id).populate('reviews');
+      const updatedProduct = await Product.findById(id)
+      .populate({
+        path: "reviews",
+        populate: {
+          path: "user",
+          model: "User",
+        },
+      });
   
       
       res.status(201).json({
@@ -305,7 +318,14 @@ const productController = {
       await product.save();
   
       // Populate the reviews
-      const updatedProduct = await Product.findById(review.product).populate('reviews');
+      const updatedProduct = await Product.findById(review.product)
+      .populate({
+        path: "reviews",
+        populate: {
+          path: "user",
+          model: "User",
+        },
+      });
   
       res.status(200).json({
         message: "Review updated successfully",
@@ -348,7 +368,14 @@ const productController = {
       await product.save();
     
       // Populate the reviews
-      const updatedProduct = await Product.findById(review.product).populate('reviews');
+      const updatedProduct = await Product.findById(review.product)
+      .populate({
+        path: "reviews",
+        populate: {
+          path: "user",
+          model: "User",
+        },
+      });
     
       res.status(200).json({
         message: "Review deleted successfully",
@@ -359,7 +386,6 @@ const productController = {
       res.status(500).json({ message: "Error deleting review", error });
     }
   },
-  
   
 };
 
