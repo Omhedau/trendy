@@ -224,19 +224,17 @@ const productController = {
       const id = req.params.id;
       const { rating, comment } = req.body;
       const user = req.user._id;
-
+  
       // Validate input
       if (!user || !rating || !comment || rating < 1 || rating > 5) {
         return res.status(400).json({ message: "Invalid review data" });
       }
-
+  
       const product = await Product.findById(id);
-      console.log(id," product for review -->",product);
-
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
-
+  
       // Create a new review
       const review = new Review({
         user,
@@ -244,24 +242,27 @@ const productController = {
         comment,
         product: id,
       });
-
+  
       await review.save();
-
+  
       // Find the product and add the review to its reviews array
       product.reviews.push(review._id);
-
+  
       // Update the product's average rating
       const reviews = await Review.find({ product: id });
       const totalRatings = reviews.reduce((acc, review) => acc + review.rating, 0);
       const averageRating = totalRatings / reviews.length;
-
+  
       product.ratings = averageRating;
       await product.save();
-
+  
+      // Populate the reviews
+      const updatedProduct = await Product.findById(id).populate('reviews');
+  
+      
       res.status(201).json({
         message: "Review added successfully",
-        review,
-        averageRating,
+        product: updatedProduct,
       });
     } catch (error) {
       console.error("Error adding review:", error);
@@ -273,90 +274,92 @@ const productController = {
     try {
       const reviewId = req.params.id;
       const { rating, comment } = req.body;
-
+  
       // Validate input
       if (!rating || !comment || rating < 1 || rating > 5) {
         return res.status(400).json({ message: "Invalid review data" });
       }
-
+  
       // Find and update the review
       const review = await Review.findById(reviewId);
-
       if (!review) {
         return res.status(404).json({ message: "Review not found" });
       }
-
-      console.log(review.user," user for update review ---> ",req.user._id);
-
+  
       // Ensure the user updating the review is the original author
       if (review.user.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "Not authorized to update this review" });
       }
-
+  
       review.rating = rating;
       review.comment = comment;
       await review.save();
-
+  
       // Update the product's average rating
       const product = await Product.findById(review.product);
       const reviews = await Review.find({ product: review.product });
       const totalRatings = reviews.reduce((acc, review) => acc + review.rating, 0);
       const averageRating = totalRatings / reviews.length;
-
+  
       product.ratings = averageRating;
       await product.save();
-
+  
+      // Populate the reviews
+      const updatedProduct = await Product.findById(review.product).populate('reviews');
+  
       res.status(200).json({
         message: "Review updated successfully",
-        review,
-        averageRating,
+        product: updatedProduct,
       });
     } catch (error) {
       console.error("Error updating review:", error);
       res.status(500).json({ message: "Error updating review", error });
     }
   },
-
+  
   deleteReview: async (req, res) => {
     try {
       const reviewId = req.params.id;
-  
+    
       // Find the review by ID
       const review = await Review.findById(reviewId);
-  
       if (!review) {
         return res.status(404).json({ message: "Review not found" });
       }
-  
+    
       // Ensure the user deleting the review is the original author
       if (review.user.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "Not authorized to delete this review" });
       }
-  
+    
       // Remove the review from the product's reviews array
       const product = await Product.findById(review.product);
       product.reviews = product.reviews.filter((id) => id.toString() !== reviewId);
-  
+    
       // Remove review from the database
       await Review.deleteOne({ _id: reviewId });
-  
+    
       // Update the product's average rating
       const reviews = await Review.find({ product: review.product });
       const totalRatings = reviews.reduce((acc, review) => acc + review.rating, 0);
       const averageRating = reviews.length ? (totalRatings / reviews.length) : 0;
-  
+    
       product.ratings = averageRating;
       await product.save();
-  
+    
+      // Populate the reviews
+      const updatedProduct = await Product.findById(review.product).populate('reviews');
+    
       res.status(200).json({
         message: "Review deleted successfully",
-        averageRating,
+        product: updatedProduct,
       });
     } catch (error) {
       console.error("Error deleting review:", error);
       res.status(500).json({ message: "Error deleting review", error });
     }
   },
+  
   
 };
 
