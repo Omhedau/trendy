@@ -84,7 +84,14 @@ const orderController = {
   getUserOrders: async (req, res) => {
     try {
       const userId = req.user.id; // Assuming you have user authentication and the user ID is available in req.user
-      const orders = await Order.find({ user: userId }).populate('orderItems'); // Assuming orders have a 'user' field referencing the user and 'products' field
+      const orders = await Order.find({ user: userId })
+      .populate({
+        path: 'orderItems',
+        populate: {
+          path: 'product',
+          select: 'title imageUrl', 
+        },
+      });
 
       if (!orders) {
         return res.status(404).json({ error: 'Orders not found' });
