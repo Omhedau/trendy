@@ -7,6 +7,7 @@ import productRouter from './routes/product.js';
 import userRouter from './routes/user.js';
 import cartRouter from './routes/cart.js';
 import orderRouter from './routes/order.js';
+import paymentRouter from "./routes/payment.js"
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -30,6 +31,7 @@ app.use('/product', productRouter);
 app.use('/user', userRouter);
 app.use('/cart', cartRouter);
 app.use('/order', orderRouter);
+app.use('/payment',paymentRouter);
 
 app.listen(process.env.PORT, async () => {
   await connectDb();
